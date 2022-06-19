@@ -1,3 +1,6 @@
+import sys
+from datetime import datetime
+
 import torch
 from torch.utils.data import Dataset, DataLoader
 from my_net import *
@@ -17,9 +20,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 train_loader = DataLoader(train_set, batch_size = 128, shuffle=True, pin_memory = True)
 
-train_epoch = 2
+train_epoch = 100
 
 def main():
+	start_time = datetime.now() 
+	print("Begin at {}".format(start_time.strftime('%Y-%m-%d %H:%M:%S')))
 	model = MyNet()
 	print("Using ", torch.cuda.device_count(), "GPUs for data parallel training")
 	optimizer = torch.optim.SGD(model.parameters(), lr = 5e-4)
@@ -36,7 +41,10 @@ def main():
 			optimizer.step()
 			print(f"batch {idx}, loss {loss.item()}")
 	print("Training Done!")
-	
+	now = datetime.now()
+	print("Complete at {}".format(now.strftime('%Y-%m-%d %H:%M:%S')))
+	print("--- {} seconds ---".format(now - start_time))
+	sys.stdout.flush()
 
 if __name__ == '__main__':
 	main()

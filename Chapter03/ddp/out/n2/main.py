@@ -39,10 +39,10 @@ def checkpointing(rank, epoch, net, optimizer, loss):
 				}, path)
 	print(f"Checkpointing model {rank} done.")
 
-def load_checkpoint(rank, local_rank):
+def load_checkpoint(rank, machines):
 	path = f"model{rank}.pt"
 	checkpoint = torch.load(path)
-	model = torch.nn.DataParallel(MyNet(), device_ids=[local_rank])
+	model = torch.nn.DataParallel(MyNet(), device_ids=[rank%machines])
 	optimizer = torch.optim.SGD(model.parameters(), lr = 5e-4)
 
 	epoch = checkpoint['epoch']
@@ -112,7 +112,7 @@ def test(local_rank, args):
 
 	torch.cuda.set_device(local_rank)
 	print(f"Load checkpoint {rank}")
-	model, optimizer, epoch, loss = load_checkpoint(rank, local_rank)
+	model, optimizer, epoch, loss = load_checkpoint(rank, args.machines)
 	print("Checkpoint loading done!")
 
 	local_test_sampler = DDP_sampler(test_set, rank = rank, num_replicas = world_size)
@@ -140,7 +140,7 @@ def main():
 	parser.add_argument('-m', '--machines', default=2, type=int, help='number of machines')
 	parser.add_argument('-g', '--gpus', default = 4, type=int, help='number of GPUs in a machine')
 	parser.add_argument('-id', '--mid', default = 0, type=int, help='machine id number')
-	parser.add_argument('-e', '--epochs', default = 1, type = int, help='number of epochs')
+	parser.add_argument('-e', '--epochs', default = 10, type = int, help='number of epochs')
 	args = parser.parse_args()
 	net_setup()
 	mp.spawn(train, nprocs=args.gpus, args=(args,), join=True)
